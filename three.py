@@ -1,32 +1,4 @@
-def get_char(point, wires):
-
-    if point == ORIGIN:
-        return 'o'
-
-    intersections = 0
-
-    for wire in wires:
-        if point in wire:
-            intersections += 1
-            continue
-        if intersections == 2:
-            return 'X'
-
-    if not intersections:
-        return '.'
-    else:
-        return '*'
-
-
-def print_grid(wires):
-    y,x = ORIGIN
-    x -= SIZE
-    y -= SIZE
-    for i in range(SIZE*2):
-        for j in range(SIZE*2):
-            point = (y+i,x+j)
-            print(get_char(point, wires), end='')
-        print()
+ORIGIN = (0,0)
 
 
 def get_distance(p, q):
@@ -80,6 +52,7 @@ def get_exes(wires):
                 seen.add(point)
     return exes
 
+
 def find_step(ex, wire):
     for num, point in enumerate(wire, start=1):
         if ex == point:
@@ -95,13 +68,8 @@ def find_steps(ex, wires):
     return steps
 
 
-ORIGIN = (0,0)
-SIZE = 15
-
-
 with open('input.txt') as fh:
     lines = fh.read().splitlines()
-
 
 wires = get_wires(lines)
 exes = get_exes(wires)
