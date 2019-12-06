@@ -1,91 +1,116 @@
-from collections import defaultdict
+def get_char(point, wires):
 
-def find_total_steps(steps_list):
-    hello = {}
-    for step in reversed(steps_list): # Reversed because it's first occurance not last to overwrite with
-        hello[step[0]] = step[1]
-    return sum(hello.values())
+    if point == ORIGIN:
+        return 'o'
+
+    intersections = 0
+
+    for wire in wires:
+        if point in wire:
+            intersections += 1
+            continue
+        if intersections == 2:
+            return 'X'
+
+    if not intersections:
+        return '.'
+    else:
+        return '*'
+
+
+def print_grid(wires):
+    y,x = ORIGIN
+    x -= SIZE
+    y -= SIZE
+    for i in range(SIZE*2):
+        for j in range(SIZE*2):
+            point = (y+i,x+j)
+            print(get_char(point, wires), end='')
+        print()
+
 
 def get_distance(p, q):
     return abs(p[0] - q[0]) + abs(p[1] - q[1])
 
-def print_grid(o, g):
-    size = 2000
-    x,y = o
-    x -= size
-    y -= size
-    for i in range(size*2):
-        for j in range(size*2):
-            #print(y+i, x+j)
-            print(grid[y+i][x+j], end='')
-        print()
 
+def get_wire_points(moves):
 
-with open('input3.txt') as fh:
-    wires = fh.read().splitlines()
+    y, x = ORIGIN
+    points = []
 
+    for move in moves:
+        way = move[0]
+        steps = int(move[1:])
 
-size = 20000
-grid = []
-for i in range(size):
-    grid.append(list(size * '.'))
+        for i in range(steps):
 
-origin = (int(size/2), int(size/2))
-x, y = origin
-grid[y][x] = 'o'
-exes = []
-which_wire = {}
-steps = defaultdict(list)
-for label, wire in enumerate(wires):
-    wire = wire.split(',')
-    x, y = origin
-    num_steps = 0
-    for path in wire:
-        letter = path[0]
-        num = int(path[1:])
-
-        for i in range(num):
-            num_steps += 1
-            if letter == 'R':
+            if way == 'R':
                 x += 1
-                mark = '-'
-            elif letter == 'U':
+            elif way == 'U':
                 y -= 1
-                mark = '|'
-            elif letter == 'D':
+            elif way == 'D':
                 y += 1
-                mark = '|'
-            elif letter == 'L':
+            elif way == 'L':
                 x -= 1
-                mark = '-'
-            current_square = (y,x)
-            if grid[y][x] != '.':
-                if which_wire[current_square] != label:
-                    mark = 'X'
-                    exes.append(current_square)
-            which_wire[current_square] = label
-            steps[current_square].append((label, num_steps))
-            grid[y][x] = mark
+            else:
+                raise Exception(way)
 
-        grid[y][x] = '+'
-        #print_grid(origin, grid)
-        #import pdb
-        #pdb.set_trace()
-        #print(letter,num)
-    #grid[y][x] = mark
-#print_grid(origin, grid)
-print(sorted([get_distance(origin, ex) for ex in exes]))
+            points.append((y,x))
 
-min_steps = 9999999999999
-for ex in exes:
-    distance = get_distance(origin, ex)
-    total_steps = find_total_steps(steps[ex])
-    if total_steps < min_steps:
-        min_steps = total_steps
-    print(ex, distance, steps[ex], total_steps)
-print(min_steps)
+    return points
 
-   
+
+def get_wires(file_lines):
+    wires = []
+    for moves in file_lines:
+        moves = moves.split(',')
+        wire = get_wire_points(moves)
+        wires.append(wire)
+    return wires
+
+
+def get_exes(wires):
+    exes = []
+    seen = set()
+    for wire in wires:
+        for point in set(wire): # Making sure it doesnt intersect with itself
+            if point in seen:
+                exes.append(point)
+            else:
+                seen.add(point)
+    return exes
+
+def find_step(ex, wire):
+    for num, point in enumerate(wire, start=1):
+        if ex == point:
+            return num
+    return 0
+
+
+def find_steps(ex, wires):
+    steps = 0
+    for wire in wires:
+        if ex in wire: # Ineffecient, should use set here
+            steps += find_step(ex, wire)
+    return steps
+
+
+ORIGIN = (0,0)
+SIZE = 15
+
+
+with open('input.txt') as fh:
+    lines = fh.read().splitlines()
+
+
+wires = get_wires(lines)
+exes = get_exes(wires)
+
+print('Part 1')
+print(min([get_distance(ex, ORIGIN) for ex in exes]))
+
+print('\nPart 2')
+print(min([find_steps(ex, wires) for ex in exes]))
     
 
 
