@@ -1,32 +1,36 @@
+class Tree:
 
-def count_nodes(tree, node):
-    if node not in tree:
-        return 0
-    node = tree[node]
-    return 1 + count_nodes(tree, node)
+    def __init__(self, file_lines):
+        self.nodes_dict = {}
+        for idx, line in enumerate(file_lines):
+            parent, child = line.split(')')
+            self.nodes_dict[child] = parent # Backwards
+
+    def count_parents(self, node):
+        if node not in self.nodes_dict:
+            return 0
+        return 1 + self.count_parents(self.nodes_dict[node])
+
+    def get_parents(self, node):
+        parents = []
+        while node in self.nodes_dict:
+            node = self.nodes_dict[node]
+            parents.append(node)
+        return parents
 
 
 with open('input.txt') as fh:
-    text = fh.read().split()
+    lines = fh.read().split()
 
-tree = {}
-root = None
-for idx, line in enumerate(text):
-    parent, child = line.split(')')
-    tree[child] = parent
+tree = Tree(lines)
 
 total = 0
-for node in tree:
-    total += count_nodes(tree, node)
+for node in tree.nodes_dict:
+    total += tree.count_parents(node)
 print(total) # Part 1
 
-
-def get_nodes(tree, node):
-    nodes = []
-    while node in tree:
-        node = tree[node]
-        nodes.append(node)
-    return nodes
+you_nodes = tree.get_parents('YOU')
+san_nodes = tree.get_parents('SAN')
 
 
 def a_to_b(a_nodes, b_nodes):
@@ -35,8 +39,5 @@ def a_to_b(a_nodes, b_nodes):
         if node in b_nodes_set:
             return idx
 
-
-you_nodes = get_nodes(tree, 'YOU')
-san_nodes = get_nodes(tree, 'SAN')
 
 print(a_to_b(you_nodes, san_nodes) + a_to_b(san_nodes, you_nodes))
