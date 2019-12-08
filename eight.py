@@ -15,9 +15,8 @@ num_layers = int(length / (m * n))
 matrices = np.asarray(nums).reshape(num_layers, m, n)
 
 max_nonzero_layer = np.count_nonzero(matrices.reshape(num_layers,(m*n)), axis=1).argmax()
-unique, counts = np.unique(matrices[max_nonzero_layer], return_counts=True)
-counts_dict = dict(zip(unique, counts))
-answer = counts_dict[1] * counts_dict[2]
+max_matrix = matrices[max_nonzero_layer]
+answer = np.sum(max_matrix==1) * np.sum(max_matrix==2)
 print('Part1', answer)
 
 image = np.zeros((m,n), dtype=int) + 2 # Initialize to transparent layer
