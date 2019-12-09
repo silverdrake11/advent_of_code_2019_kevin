@@ -1,12 +1,4 @@
 import pdb
-from pprint import pprint
-
-
-def get_opcode(inst):
-    inst = str(inst).rjust(5,'0')
-    opcode = inst[-2:]
-    ret_value = inst[2], inst[1], inst[0], opcode
-    return [int(x) for x in ret_value]
 
 
 class Computer:
@@ -14,20 +6,32 @@ class Computer:
 
     def __init__(self, code):
 
-        self.prog = [x for x in code]
+        self.prog = {}
+        for i, x in enumerate(code):
+            self.prog[i] = x
         self.i = 0
         self.running = True
+        self.base = 0
 
 
     def get_param(self, num, mode):
         assert num
         assert num < 4
-        value = self.prog[self.i + num]
-        if mode:
+        value = self.prog[self.i + num] # CHANGE?
+        if mode == 1:
             param = value
+        elif mode == 2:
+            param = self.read_prog(self.base + value)
         else:
-            param = self.prog[value]
+            param = self.read_prog(value)
         return param
+
+
+    def read_prog(self, idx):
+        if idx in self.prog:
+            return self.prog[idx]
+        else:
+            return 0
 
 
     def run(self):
@@ -37,7 +41,7 @@ class Computer:
 
     def step(self):
 
-        inst = self.prog[self.i]
+        inst = self.prog[self.i] # CHANGE?
 
         mode1, mode2, mode3, opcode = get_opcode(inst)
 
@@ -67,7 +71,11 @@ class Computer:
                 else:
                     ans = 0
 
-            self.prog[v3] = ans
+            # HERE
+            if mode3 == 2:
+                self.prog[self.base + v3] = ans
+            else:
+                self.prog[v3] = ans
 
         elif opcode in (5,6):
 
@@ -92,12 +100,22 @@ class Computer:
             in1 = self.prog[self.i+1]
             if opcode == 3:
                 input_value = int(input())
-                self.prog[in1] = input_value
+                if mode1 == 2:
+                    self.prog[self.base + in1] = input_value
+                else:
+                    self.prog[in1] = input_value #HERE
             else:
-                if mode1 == 1:
+                if mode1 == 2:
+                    print(self.read_prog(self.base + in1))
+                elif mode1 == 1:
                     print(in1)
                 else:
-                    print(self.prog[in1])
+                    print(self.read_prog(in1)) #HERE
+
+        elif opcode == 9:
+            increment = 2
+            value1 = self.get_param(1, mode1)
+            self.base += value1
 
         else:
             raise Exception(opcode)
@@ -105,17 +123,11 @@ class Computer:
         self.i += increment
 
 
-if __name__ == '__main__':
-    with open('input.txt') as fh:
-        text = fh.read().strip()
+with open('input.txt') as fh:
+    text = fh.read().strip()
 
-    code = text.split(',')
-    code = [int(x) for x in code]
+code = text.split(',')
+code = [int(x) for x in code]
 
-    # Part 1
-    comp = Computer(code)
-    comp.run()
-
-    # Part 2
-    comp = Computer(code)
-    comp.run()
+comp = Computer(code)
+comp.run()
