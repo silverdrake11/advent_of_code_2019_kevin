@@ -1,203 +1,170 @@
 import pdb
+from itertools import permutations
 
 
-with open('input.txt') as fh:
-    text = fh.read().strip()
-
-prog = text.split(',')
-prog = [int(x) for x in prog]
-
-
-def get_params(inst):
+def get_opcode(inst):
     inst = str(inst).rjust(5,'0')
     opcode = inst[-2:]
     ret_value = inst[2], inst[1], inst[0], opcode
     return [int(x) for x in ret_value]
 
 
-def program(prog, start=0, given=[]):
-    #prog = [x for x in prog] # deep copy
-    i = start
-    #print('pointer', i)
-    given = list(reversed(given))
-    while True:
-        cur = prog[i]
+class Computer:
 
-        first, second, third, opcode = get_params(cur)
+
+    def __init__(self, code):
+
+        self.prog = [x for x in code]
+        self.i = 0
+        self.running = True
+
+
+    def get_param(self, num, mode):
+        assert num
+        assert num < 4
+        value = self.prog[self.i + num]
+        if mode:
+            param = value
+        else:
+            param = self.prog[value]
+        return param
+
+
+    def run(self):
+        while self.running:
+            self.step()
+
+
+    def run_until(self, given):
+        given = list(reversed(given))
+        while self.running:
+            out = self.step(given)
+            if out is not None:
+                return out
+
+
+    def step(self, given=None):
+
+        ret_value = None
+        inst = self.prog[self.i]
+
+        mode1, mode2, mode3, opcode = get_opcode(inst)
 
         if opcode == 99:
-            return prog[0]
+            self.running = False
+            return
 
-        elif opcode == 1 or opcode == 2 or opcode == 7 or opcode == 8:
+        elif opcode in (1,2,7,8):
             increment = 4
 
-            in1 = prog[i+1]
-            in2 = prog[i+2]
-            if first:
-                value1 = in1
-            else:
-                value1 = prog[in1]
-            if second:
-                value2 = in2
-            else:
-                value2 = prog[in2]
-
-            out = prog[i+3]
+            v1 = self.get_param(1, mode1)
+            v2 = self.get_param(2, mode2)
+            v3 = self.prog[self.i + 3]
 
             if opcode == 1:
-                prog[out] = value1 + value2
+                ans = v1 + v2
             if opcode == 2:
-                prog[out] = value1 * value2
+                ans = v1 * v2
             if opcode == 7:
-                if value1 < value2:
-                    prog[out] = 1
+                if v1 < v2:
+                    ans = 1
                 else:
-                    prog[out] = 0
+                    ans = 0
             if opcode == 8:
-                if value1 == value2:
-                    prog[out] = 1
+                if v1 == v2:
+                    ans = 1
                 else:
-                    prog[out] = 0
+                    ans = 0
 
-        elif opcode == 3 or opcode == 4:
-            increment = 2
+            self.prog[v3] = ans
 
-            in1 = prog[i+1]
+        elif opcode in (5,6):
 
-            if opcode == 3:
-                if given:
-                    input_value = int(given.pop())
-                    #pdb.set_trace()
-                    #print(input_value)
-                else:
-                    input_value = int(input())
-                prog[in1] = input_value
-            else:
-                #return prog[in1]
-                return(i + increment, prog[in1])
-
-        elif opcode == 5 or opcode == 6:
             increment = 3
 
-            in1 = prog[i+1]
-            in2 = prog[i+2]
-            if first:
-                value1 = in1
-            else:
-                value1 = prog[in1]
-            if second:
-                value2 = in2
-            else:
-                value2 = prog[in2]
+            value1 = self.get_param(1, mode1)
+            value2 = self.get_param(2, mode2)
 
             if opcode == 5:
                 if value1:
-                    i = value2
+                    self.i = value2
                     increment = 0
             else:
                 assert opcode == 6
                 if not value1:
-                    i = value2
+                    self.i = value2
                     increment = 0
+
+        elif opcode == 3 or opcode == 4:
+            increment = 2
+
+            in1 = self.prog[self.i+1]
+            if opcode == 3:
+                if given:
+                    input_value = int(given.pop())
+                else:
+                    input_value = int(input())
+                self.prog[in1] = input_value
+            else:
+                if mode1 == 1:
+                    out = in1
+                else:
+                    out = self.prog[in1]
+                ret_value = out
+                print(out)
 
         else:
             raise Exception(opcode)
 
-        i = i + increment
+        self.i += increment
+
+        return ret_value
 
 
-'''def try_values(prog, values):
+def part1_try(values):
     out_value = 0
     for in_value in values:
-        prog = [x for x in prog]
-        out_value = program(prog, 0, [in_value, out_value])
+        comp = Computer(CODE)
+        out_value = comp.run_until([in_value, out_value])
     return out_value
 
 
-import itertools
-myStr = "01234"
-chars = list(myStr)
-list_of_values = []
-for comb in itertools.permutations(chars):
-    value = try_values(prog, comb)
-    if value == 38834:
-        print(comb)
-    list_of_values.append(value)
-print('Part 1: ', max(list_of_values))'''
-
-
-def new_function_program(prog, seq):
-    prog1 = [x for x in prog]
-    prog2 = [x for x in prog]
-    prog3 = [x for x in prog]
-    prog4 = [x for x in prog]
-    prog5 = [x for x in prog]
-
-    save1, result1 = program(prog1,0,[seq[0],0])
-    #print(result1)
-    save2, result2 = program(prog2,0,[seq[1],result1])
-    #print(result2)
-    save3, result3 = program(prog3,0,[seq[2],result2])
-    #print(result3)
-    save4, result4 = program(prog4,0,[seq[3],result3])
-    #print(result4)
-    save5, result5 = program(prog5,0,[seq[4],result4])
-    #print(result5)
-
-    state = {1:[prog1, save1, result1], 
-    2:[prog2, save2, result2], 
-    3:[prog3, save3, result3], 
-    4:[prog4, save4, result4], 
-    5:[prog5, save5, result5]}
-
-    #print(state)
-    #pdb.set_trace()
-
-    i = 1
-    answers = []
+def part2_try(in_values):
+    amps = [Computer(CODE) for x in range(NUM_AMPS)]
+    out_value = 0
+    for i in range(NUM_AMPS):
+        out_value = amps[i].run_until([in_values[i], out_value])
+    prev_value = 0
     while True:
-        if i == 6:
-            i = 1
-        if i == 1:
-            prev_index = 5
-        else:
-            prev_index = i-1
-        prog_prev, save_prev, result_prev = state[prev_index]
-        prog, save, result = state[i]
-        try:
-            one, two = program(prog, save, [result_prev])
-        except:
-            return answers[-1]
-        #print(i, two)
-        #pdb.set_trace()
-        state[i] = [prog, one, two]
-        #print(i)
-        answers.append(two)
-        i += 1
-
-    '''
-    for x,y in combinations:
-        prog[1] = x
-        prog[2] = y
-        ans = program(prog)
-        if ans == 19690720:
-            print(100 * x + y)
-            break'''
+        for i in range(NUM_AMPS):
+            out_value = amps[i].run_until([out_value])
+            if out_value == None:
+                return prev_value
+            prev_value = out_value
 
 
-import itertools
-myStr = "56789"
-chars = list(myStr)
+with open('input.txt') as fh:
+    text = fh.read().strip()
+
+CODE = text.split(',')
+CODE = [int(x) for x in CODE]
+NUM_AMPS = 5
+
+
+chars = list('01234')
 list_of_values = []
-for comb in itertools.permutations(chars):
-    value = new_function_program(prog, comb)
-    #if value == 38834:
-    #    print(comb)
+for comb in permutations(chars):
+    value = part1_try(comb)
+    list_of_values.append(value)
+print('Part 1: ', max(list_of_values))
+
+
+chars = list('56789')
+list_of_values = []
+for comb in permutations(chars):
+    value = part2_try(comb)
     list_of_values.append(value)
 print('Part 2:', max(list_of_values))
-
-#print(new_function_program(prog, (9,7,8,5,6)))
-    
 
 
 
