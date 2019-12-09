@@ -12,11 +12,11 @@ m,n = (6, 25)
 #m,n = (2,2) # DEBUG
 num_layers = int(length / (m * n))
 
-matrices = np.asarray(nums).reshape(num_layers, m, n)
+matrices = np.array(nums).reshape(num_layers, m, n)
 
 min_zero_layer = np.sum(matrices.reshape(num_layers, m*n)==0, axis=1).argmin()
 min_matrix = matrices[min_zero_layer]
-answer = np.sum(min_matrix==1) * np.sum(min_matrix==2)
+answer = (min_matrix==1).sum() * (min_matrix==2).sum()
 print('Part1', answer)
 
 image = np.zeros((m,n), dtype=int) + 2 # Initialize to transparent layer
@@ -31,7 +31,6 @@ for i in reversed(range(num_layers)):
     # Zero out black and white pixels in image, then add nontransparent pixels
     image = (image * mask) + (cur * (1-mask))
 
-# For pretty printing
 import matplotlib.pyplot as plt
 imgplot = plt.imshow(image)
 plt.show()
